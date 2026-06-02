@@ -1,13 +1,1243 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>My Google AI Studio App</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Trò Chơi Tương Tác Lớp Học</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+        }
+        /* Custom scrollbar for better look */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Grid background for game feel */
+        .game-bg {
+            background-color: #0f172a;
+            background-image: radial-gradient(#1e293b 1px, transparent 1px);
+            background-size: 24px 24px;
+        }
+        /* 3D effect cards */
+        .card-3d {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .card-3d:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        /* Flip card animation */
+        .flip-card {
+            perspective: 1000px;
+        }
+        .flip-card-inner {
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .flip-card.flipped .flip-card-inner {
+            transform: rotateY(180deg);
+        }
+        .flip-card-front, .flip-card-back {
+            backface-visibility: hidden;
+        }
+        .flip-card-back {
+            transform: rotateY(180deg);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- TOP HEADER / BANNER -->
+    <header class="bg-slate-800 border-b border-slate-700 shadow-md px-6 py-4 flex flex-wrap justify-between items-center gap-4 z-10">
+        <div class="flex items-center gap-3">
+            <div class="p-2.5 bg-indigo-600 rounded-xl text-white shadow-lg animate-pulse">
+                <i class="fa-solid fa-gamepad text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">
+                    TRÒ CHƠI LỚP HỌC TƯƠNG TÁC
+                </h1>
+                <p class="text-xs text-slate-400" id="current-topic-label">Chủ đề hiện tại: Hệ Mặt Trời & Khoa Học Vũ Trụ</p>
+            </div>
+        </div>
+
+        <!-- SCOREBOARD (BẢNG ĐIỂM NHANH) -->
+        <div class="flex items-center gap-4 bg-slate-900/80 px-4 py-2 rounded-2xl border border-slate-700">
+            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400"><i class="fa-solid fa-trophy text-amber-500 mr-1"></i> Bảng Điểm:</span>
+            <div class="flex gap-4">
+                <div class="flex items-center gap-2 bg-rose-950/40 border border-rose-800/40 px-3 py-1 rounded-xl">
+                    <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+                    <span class="text-sm font-semibold text-rose-300">Đội Đỏ:</span>
+                    <span id="score-red" class="font-bold text-white text-base">0</span>
+                    <div class="flex flex-col text-[10px] leading-none ml-1">
+                        <button onclick="changeScore('red', 10)" class="text-emerald-400 hover:text-emerald-300 font-bold px-1">+</button>
+                        <button onclick="changeScore('red', -10)" class="text-rose-400 hover:text-rose-300 font-bold px-1">-</button>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 bg-sky-950/40 border border-sky-800/40 px-3 py-1 rounded-xl">
+                    <span class="w-3 h-3 rounded-full bg-sky-500"></span>
+                    <span class="text-sm font-semibold text-sky-300">Đội Xanh:</span>
+                    <span id="score-blue" class="font-bold text-white text-base">0</span>
+                    <div class="flex flex-col text-[10px] leading-none ml-1">
+                        <button onclick="changeScore('blue', 10)" class="text-emerald-400 hover:text-emerald-300 font-bold px-1">+</button>
+                        <button onclick="changeScore('blue', -10)" class="text-rose-400 hover:text-rose-300 font-bold px-1">-</button>
+                    </div>
+                </div>
+            </div>
+            <button onclick="resetScores()" class="text-slate-400 hover:text-white text-xs px-2 py-1 bg-slate-800 rounded-lg hover:bg-slate-700 transition">
+                <i class="fa-solid fa-rotate-left"></i> Reset
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN BODY -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- SIDEBAR - GAME CHANGER & EDITOR -->
+        <aside class="w-full md:w-80 bg-slate-800 border-r border-slate-700 flex flex-col justify-between overflow-y-auto">
+            <!-- Game List -->
+            <div class="p-4 space-y-4">
+                <div class="text-xs font-semibold text-slate-400 uppercase tracking-widest px-2">CHỌN TRÒ CHƠI HỌC TẬP</div>
+                <div class="grid grid-cols-1 gap-2">
+                    
+                    <button onclick="switchTab('game1')" id="btn-game1" class="tab-btn w-full flex items-center gap-3 p-3 rounded-xl text-left font-semibold text-slate-300 hover:bg-slate-700/50 hover:text-white transition group border border-transparent">
+                        <div class="w-10 h-10 rounded-lg bg-amber-500/10 text-amber-500 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white transition">
+                            <i class="fa-solid fa-circle-notch animate-spin-slow"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">1. Vòng Quay Tri Thức</div>
+                            <div class="text-[10px] text-slate-400 font-normal">Quay ô chọn câu hỏi ngẫu nhiên</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('game2')" id="btn-game2" class="tab-btn w-full flex items-center gap-3 p-3 rounded-xl text-left font-semibold text-slate-300 hover:bg-slate-700/50 hover:text-white transition group border border-transparent">
+                        <div class="w-10 h-10 rounded-lg bg-rose-500/10 text-rose-500 flex items-center justify-center group-hover:bg-rose-500 group-hover:text-white transition">
+                            <i class="fa-solid fa-rocket"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">2. Đua Xe Không Gian</div>
+                            <div class="text-[10px] text-slate-400 font-normal">2 Đội đua tài trả lời nhanh</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('game3')" id="btn-game3" class="tab-btn w-full flex items-center gap-3 p-3 rounded-xl text-left font-semibold text-slate-300 hover:bg-slate-700/50 hover:text-white transition group border border-transparent">
+                        <div class="w-10 h-10 rounded-lg bg-emerald-500/10 text-emerald-500 flex items-center justify-center group-hover:bg-emerald-500 group-hover:text-white transition">
+                            <i class="fa-solid fa-puzzle-piece"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">3. Mảnh Ghép Bí Ẩn</div>
+                            <div class="text-[10px] text-slate-400 font-normal">Lật ô lộ bức ảnh bí mật</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('game4')" id="btn-game4" class="tab-btn w-full flex items-center gap-3 p-3 rounded-xl text-left font-semibold text-slate-300 hover:bg-slate-700/50 hover:text-white transition group border border-transparent">
+                        <div class="w-10 h-10 rounded-lg bg-cyan-500/10 text-cyan-500 flex items-center justify-center group-hover:bg-cyan-500 group-hover:text-white transition">
+                            <i class="fa-solid fa-box-open"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">4. Hộp Quà Bí Mật</div>
+                            <div class="text-[10px] text-slate-400 font-normal">Chọn hộp quà may mắn & trả lời</div>
+                        </div>
+                    </button>
+
+                    <button onclick="switchTab('game5')" id="btn-game5" class="tab-btn w-full flex items-center gap-3 p-3 rounded-xl text-left font-semibold text-slate-300 hover:bg-slate-700/50 hover:text-white transition group border border-transparent">
+                        <div class="w-10 h-10 rounded-lg bg-violet-500/10 text-violet-500 flex items-center justify-center group-hover:bg-violet-500 group-hover:text-white transition">
+                            <i class="fa-solid fa-clone"></i>
+                        </div>
+                        <div>
+                            <div class="text-sm">5. Trận Chiến Trí Nhớ</div>
+                            <div class="text-[10px] text-slate-400 font-normal">Ghép cặp thuật ngữ - định nghĩa</div>
+                        </div>
+                    </button>
+
+                </div>
+            </div>
+
+            <!-- Editor Toggle & Content Panel -->
+            <div class="p-4 border-t border-slate-700 bg-slate-800/80">
+                <button onclick="switchTab('editor')" id="btn-editor" class="tab-btn w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-slate-700 hover:bg-indigo-600 text-slate-100 font-medium rounded-xl transition text-sm shadow-md">
+                    <i class="fa-solid fa-pen-to-square"></i> Biên Soạn Bài Học Để Chơi
+                </button>
+                <p class="text-[10px] text-slate-400 mt-2 text-center">Tự soạn câu hỏi và nội dung theo ý bạn!</p>
+            </div>
+        </aside>
+
+        <!-- MAIN GAME WORKSPACE (Interactive Zone) -->
+        <main class="flex-1 game-bg p-6 flex flex-col justify-between overflow-y-auto min-h-0 relative">
+            
+            <!-- GAME SCREEN 1: SPINNING WHEEL -->
+            <div id="screen-game1" class="screen flex flex-col lg:flex-row gap-8 items-center justify-center h-full hidden">
+                <div class="flex flex-col items-center">
+                    <div class="relative w-80 h-80 sm:w-96 sm:h-96">
+                        <!-- Red indicator arrow -->
+                        <div class="absolute -top-3 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[15px] border-l-transparent border-r-[15px] border-r-transparent border-t-[30px] border-t-rose-500 z-10 filter drop-shadow"></div>
+                        <canvas id="wheelCanvas" width="400" height="400" class="w-full h-full rounded-full border-4 border-slate-700 shadow-2xl"></canvas>
+                        <!-- Center Spin Button -->
+                        <button id="spin-btn" onclick="spinWheel()" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 rounded-full bg-indigo-600 text-white font-bold hover:bg-indigo-500 border-4 border-slate-800 shadow-xl transition active:scale-95 flex items-center justify-center text-sm uppercase">QUAY</button>
+                    </div>
+                </div>
+                <div class="max-w-md w-full bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-bold text-amber-400 mb-2"><i class="fa-solid fa-circle-notch mr-2"></i>Vòng Quay Tri Thức</h2>
+                    <p class="text-sm text-slate-300 mb-4">Mời một bạn học sinh đứng lên quay. Vòng quay dừng ở câu hỏi nào, học sinh đó phải trả lời câu hỏi ấy để đem điểm về cho đội!</p>
+                    <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-700 text-center">
+                        <div class="text-xs text-slate-400 uppercase tracking-wider mb-1">Kết quả quay</div>
+                        <div id="wheel-status" class="text-lg font-bold text-white">Sẵn sàng quay thưởng!</div>
+                    </div>
+                    <div class="mt-4 flex gap-2">
+                        <button onclick="openQuestionByWheel()" id="wheel-view-btn" class="flex-1 py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition active:scale-95 text-center hidden">
+                            <i class="fa-solid fa-eye mr-2"></i> Xem câu hỏi này!
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME SCREEN 2: SPACE RACE -->
+            <div id="screen-game2" class="screen flex flex-col gap-6 justify-center h-full hidden">
+                <div class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl max-w-4xl mx-auto w-full">
+                    <h2 class="text-xl font-bold text-rose-400 mb-2 flex justify-between items-center">
+                        <span><i class="fa-solid fa-rocket mr-2"></i>Đua Xe Không Gian (Space Race)</span>
+                        <span class="text-xs text-slate-400 font-normal">Nhấp nút ở dưới để tung câu hỏi cho mỗi Đội!</span>
+                    </h2>
+                    <p class="text-sm text-slate-300 mb-6">Mỗi đội trả lời đúng một câu hỏi sẽ tiến thêm một chặng. Đội nào đưa tàu vũ trụ của mình cập bến Trạm Không Gian trước sẽ giành chiến thắng chung cuộc!</p>
+                    
+                    <!-- Space Tracks -->
+                    <div class="space-y-6 relative py-4 bg-slate-900/80 rounded-xl p-4 border border-slate-700 overflow-hidden">
+                        <!-- Station finish line -->
+                        <div class="absolute right-12 top-0 bottom-0 w-2 bg-indigo-500/20 border-r-2 border-dashed border-indigo-500 flex items-center justify-center">
+                            <span class="absolute -top-3 text-[10px] text-indigo-400 font-semibold tracking-widest bg-slate-900 px-1">FINISH</span>
+                        </div>
+
+                        <!-- Track 1: Red team -->
+                        <div class="relative flex items-center h-16 border-b border-slate-800 pb-2">
+                            <div class="absolute left-0 text-rose-500 font-bold text-xs uppercase w-20">ĐỘI ĐỎ</div>
+                            <div class="flex-1 ml-20 mr-16 bg-slate-800/60 h-4 rounded-full relative">
+                                <!-- Red Rocket representation -->
+                                <div id="rocket-red" class="absolute -top-3 left-0 transition-all duration-500 flex flex-col items-center group" style="left: 0%;">
+                                    <div class="px-2 py-0.5 bg-rose-600 rounded text-[9px] font-bold text-white mb-1 shadow">Tàu Đỏ</div>
+                                    <i class="fa-solid fa-rocket text-rose-500 text-2xl rotate-90 filter drop-shadow-[0_0_8px_rgba(239,68,68,0.7)]"></i>
+                                </div>
+                            </div>
+                            <div class="absolute right-0 text-xl"><i class="fa-solid fa-satellite-dish text-indigo-400"></i></div>
+                        </div>
+
+                        <!-- Track 2: Blue team -->
+                        <div class="relative flex items-center h-16">
+                            <div class="absolute left-0 text-sky-500 font-bold text-xs uppercase w-20">ĐỘI XANH</div>
+                            <div class="flex-1 ml-20 mr-16 bg-slate-800/60 h-4 rounded-full relative">
+                                <!-- Blue Rocket representation -->
+                                <div id="rocket-blue" class="absolute -top-3 left-0 transition-all duration-500 flex flex-col items-center group" style="left: 0%;">
+                                    <div class="px-2 py-0.5 bg-sky-600 rounded text-[9px] font-bold text-white mb-1 shadow">Tàu Xanh</div>
+                                    <i class="fa-solid fa-rocket text-sky-500 text-2xl rotate-90 filter drop-shadow-[0_0_8px_rgba(14,165,233,0.7)]"></i>
+                                </div>
+                            </div>
+                            <div class="absolute right-0 text-xl"><i class="fa-solid fa-satellite-dish text-indigo-400"></i></div>
+                        </div>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="mt-6 flex flex-wrap gap-4 justify-center">
+                        <button onclick="launchRaceQuestion('red')" class="px-5 py-3 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl shadow-lg transition active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-gamepad"></i> Lượt Đội Đỏ
+                        </button>
+                        <button onclick="launchRaceQuestion('blue')" class="px-5 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl shadow-lg transition active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-gamepad"></i> Lượt Đội Xanh
+                        </button>
+                        <button onclick="resetSpaceRace()" class="px-5 py-3 bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold rounded-xl transition flex items-center gap-2">
+                            <i class="fa-solid fa-rotate"></i> Reset Đường Đua
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME SCREEN 3: MYSTERY PUZZLE -->
+            <div id="screen-game3" class="screen flex flex-col lg:flex-row gap-6 items-center justify-center h-full hidden">
+                <!-- Grid Area with Hidden Image -->
+                <div class="relative w-80 h-80 sm:w-96 sm:h-96 md:w-[450px] md:h-[450px] bg-slate-900 border border-slate-700 rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center">
+                    
+                    <!-- Back Layer: SVG Artwork / Placeholder of the Mystery Image -->
+                    <div class="absolute inset-0 flex items-center justify-center bg-slate-950 p-6">
+                        <div class="text-center select-none">
+                            <div id="mystery-svg-content" class="w-full h-full flex flex-col items-center justify-center">
+                                <!-- Styled System of Planet SVG as default artwork -->
+                                <svg class="w-48 h-48 animate-pulse text-indigo-500/80" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <circle cx="50" cy="50" r="10" fill="#f59e0b" />
+                                    <ellipse cx="50" cy="50" rx="35" ry="12" stroke="#475569" stroke-width="1.5" transform="rotate(-15 50 50)" />
+                                    <circle cx="20" cy="42" r="4" fill="#38bdf8" />
+                                    <circle cx="80" cy="58" r="6" fill="#f43f5e" />
+                                    <ellipse cx="50" cy="50" rx="45" ry="18" stroke="#334155" stroke-width="1.2" transform="rotate(15 50 50)" />
+                                    <circle cx="50" cy="50" r="48" stroke="#1e293b" stroke-dasharray="4 4" />
+                                </svg>
+                                <span class="text-lg font-bold text-slate-300 block mt-4" id="mystery-concept-reveal">Chủ đề: Hệ Mặt Trời</span>
+                                <span class="text-xs text-slate-500 block">Hãy tìm ra đáp án sau khi lật hết các mảnh ghép!</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Puzzle Grid Overlays -->
+                    <div id="puzzle-grid" class="absolute inset-0 grid grid-cols-3 grid-rows-3 gap-1 p-1 bg-slate-900/40">
+                        <!-- Grid items dynamically generated -->
+                    </div>
+                </div>
+
+                <div class="max-w-md w-full bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-bold text-emerald-400 mb-2"><i class="fa-solid fa-puzzle-piece mr-2"></i>Mảnh Ghép Bí Ẩn</h2>
+                    <p class="text-sm text-slate-300 mb-4">Mỗi ô số che giấu một phần bức tranh bí mật phía sau. Chọn một ô, trả lời đúng câu hỏi để lật mở ô đó. Đội nào đoán đúng bức tranh bí mật nhanh nhất sẽ nhận điểm thưởng lớn!</p>
+                    <div class="space-y-3">
+                        <div class="p-4 bg-slate-900/60 rounded-xl border border-slate-700 text-center">
+                            <span class="text-xs text-slate-400 block mb-1">Mẹo mở bức tranh</span>
+                            <span id="puzzle-hint-text" class="font-bold text-emerald-300 text-sm">Hành tinh đỏ, nơi loài người ước mơ đặt chân tới?</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="revealAllPuzzle()" class="flex-1 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition">Lật Tất Cả</button>
+                            <button onclick="resetPuzzle()" class="flex-1 py-2 px-3 bg-slate-700 hover:bg-rose-950/50 hover:text-rose-400 text-slate-200 text-xs font-semibold rounded-lg transition">Khôi Phục Ban Đầu</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME SCREEN 4: MYSTERY GIFT -->
+            <div id="screen-game4" class="screen flex flex-col gap-6 justify-center h-full hidden">
+                <div class="max-w-4xl mx-auto w-full bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-bold text-cyan-400 mb-2"><i class="fa-solid fa-box-open mr-2"></i>Hộp Quà Bí Mật (Mystery Boxes)</h2>
+                    <p class="text-sm text-slate-300 mb-6">Mỗi chiếc hộp chứa một thử thách/câu hỏi và phần thưởng ngẫu nhiên (Cộng 50 điểm, Nhân đôi điểm, Mất điểm, v.v.). Học sinh chọn hộp, vượt qua câu hỏi để nhận ngay phần quà bí mật!</p>
+
+                    <!-- Boxes grid -->
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-6 py-4">
+                        <!-- Box 1 -->
+                        <div onclick="openGiftBox(1, this)" class="gift-box card-3d bg-slate-900/80 border-2 border-dashed border-cyan-800 hover:border-cyan-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer text-center group h-40">
+                            <div class="text-5xl text-cyan-500 group-hover:animate-bounce mb-3"><i class="fa-solid fa-gift"></i></div>
+                            <div class="font-bold text-slate-200">Hộp Số 1</div>
+                            <div class="text-[10px] text-slate-500 uppercase mt-1">Bấm để khám phá</div>
+                        </div>
+                        <!-- Box 2 -->
+                        <div onclick="openGiftBox(2, this)" class="gift-box card-3d bg-slate-900/80 border-2 border-dashed border-cyan-800 hover:border-cyan-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer text-center group h-40">
+                            <div class="text-5xl text-violet-500 group-hover:animate-bounce mb-3"><i class="fa-solid fa-gift"></i></div>
+                            <div class="font-bold text-slate-200">Hộp Số 2</div>
+                            <div class="text-[10px] text-slate-500 uppercase mt-1">Bấm để khám phá</div>
+                        </div>
+                        <!-- Box 3 -->
+                        <div onclick="openGiftBox(3, this)" class="gift-box card-3d bg-slate-900/80 border-2 border-dashed border-cyan-800 hover:border-cyan-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer text-center group h-40">
+                            <div class="text-5xl text-rose-500 group-hover:animate-bounce mb-3"><i class="fa-solid fa-gift"></i></div>
+                            <div class="font-bold text-slate-200">Hộp Số 3</div>
+                            <div class="text-[10px] text-slate-500 uppercase mt-1">Bấm để khám phá</div>
+                        </div>
+                        <!-- Box 4 -->
+                        <div onclick="openGiftBox(4, this)" class="gift-box card-3d bg-slate-900/80 border-2 border-dashed border-cyan-800 hover:border-cyan-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer text-center group h-40">
+                            <div class="text-5xl text-emerald-500 group-hover:animate-bounce mb-3"><i class="fa-solid fa-gift"></i></div>
+                            <div class="font-bold text-slate-200">Hộp Số 4</div>
+                            <div class="text-[10px] text-slate-500 uppercase mt-1">Bấm để khám phá</div>
+                        </div>
+                        <!-- Box 5 -->
+                        <div onclick="openGiftBox(5, this)" class="gift-box card-3d bg-slate-900/80 border-2 border-dashed border-cyan-800 hover:border-cyan-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer text-center group h-40">
+                            <div class="text-5xl text-amber-500 group-hover:animate-bounce mb-3"><i class="fa-solid fa-gift"></i></div>
+                            <div class="font-bold text-slate-200">Hộp Số 5</div>
+                            <div class="text-[10px] text-slate-500 uppercase mt-1">Bấm để khám phá</div>
+                        </div>
+                        <!-- Box 6 -->
+                        <div onclick="openGiftBox(6, this)" class="gift-box card-3d bg-slate-900/80 border-2 border-dashed border-cyan-800 hover:border-cyan-400 p-6 rounded-2xl flex flex-col items-center justify-center cursor-pointer text-center group h-40">
+                            <div class="text-5xl text-indigo-500 group-hover:animate-bounce mb-3"><i class="fa-solid fa-gift"></i></div>
+                            <div class="font-bold text-slate-200">Hộp Số 6</div>
+                            <div class="text-[10px] text-slate-500 uppercase mt-1">Bấm để khám phá</div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-center mt-4">
+                        <button onclick="resetGiftBoxes()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition text-sm">Khởi tạo lại các Hộp Quà</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- GAME SCREEN 5: MEMORY FLIP -->
+            <div id="screen-game5" class="screen flex flex-col gap-6 justify-center h-full hidden">
+                <div class="max-w-4xl mx-auto w-full bg-slate-800/80 border border-slate-700 rounded-2xl p-6 shadow-xl">
+                    <h2 class="text-xl font-bold text-violet-400 mb-2 flex justify-between items-center">
+                        <span><i class="fa-solid fa-clone mr-2"></i>Trận Chiến Trí Nhớ (Memory Cards)</span>
+                        <span id="memory-timer" class="text-sm text-slate-400 font-semibold bg-slate-900/80 px-3 py-1 rounded-lg border border-slate-700"><i class="fa-regular fa-clock mr-1 text-violet-400"></i>00:00</span>
+                    </h2>
+                    <p class="text-sm text-slate-300 mb-6">Trò chơi lật thẻ bài rèn luyện trí nhớ! Nhiệm vụ là ghép đúng thẻ **Thuật ngữ** tương ứng với thẻ **Định nghĩa/Khái niệm** đúng của nó. Lần lượt 2 đội lật thẻ.</p>
+
+                    <!-- Memory grid -->
+                    <div id="memory-cards-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-4 min-h-[300px]">
+                        <!-- Populated dynamically -->
+                    </div>
+
+                    <div class="mt-4 flex justify-between items-center flex-wrap gap-4">
+                        <div class="text-sm text-slate-400">
+                            Số cặp đã khớp: <span id="memory-pairs-found" class="text-white font-bold">0</span>/6
+                        </div>
+                        <button onclick="initMemoryGame()" class="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-bold rounded-xl shadow-md transition active:scale-95">
+                            <i class="fa-solid fa-repeat"></i> Bắt đầu/Chơi lại
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SCREEN 6: LESSON EDITOR (Biên Soạn Nội Dung) -->
+            <div id="screen-editor" class="screen flex flex-col gap-6 h-full hidden">
+                <div class="max-w-4xl mx-auto w-full bg-slate-800/90 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-indigo-400 mb-2"><i class="fa-solid fa-pen-to-square mr-2"></i>Biên Soạn Nội Dung Bài Học</h2>
+                        <p class="text-sm text-slate-300">Tùy biến nhanh chóng nội dung bài dạy của bạn. Toàn bộ 5 trò chơi phía trên sẽ ngay lập tức cập nhật dựa theo câu hỏi bạn cấu hình ở đây!</p>
+                    </div>
+
+                    <!-- Fast Presets templates -->
+                    <div class="bg-indigo-950/30 border border-indigo-900/50 p-4 rounded-xl">
+                        <span class="text-xs font-semibold text-indigo-300 uppercase tracking-wider block mb-2"><i class="fa-solid fa-wand-magic-sparkles"></i> Mẫu Bài Học Có Sẵn (Chọn để tải nhanh):</span>
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="loadTemplate('vutru')" class="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg transition">Hệ Mặt Trời & Vũ Trụ</button>
+                            <button onclick="loadTemplate('lichsu')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition">Lịch Sử Việt Nam</button>
+                            <button onclick="loadTemplate('tienganh')" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-semibold rounded-lg transition">Tiếng Anh Giao Tiếp</button>
+                        </div>
+                    </div>
+
+                    <!-- Question editor form list -->
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-md font-bold text-slate-200"><i class="fa-solid fa-list-ol mr-1"></i> Danh Sách Câu Hỏi Trắc Nghiệm (Dành cho Trò chơi 1, 2, 3, 4)</h3>
+                            <button onclick="addQuestion()" class="text-xs bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-1 px-3 rounded-lg transition">
+                                <i class="fa-solid fa-plus mr-1"></i> Thêm câu hỏi
+                            </button>
+                        </div>
+                        
+                        <div id="question-editor-container" class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                            <!-- Dynamic question boxes inserted here -->
+                        </div>
+                    </div>
+
+                    <!-- Memory Pair editor form list -->
+                    <div>
+                        <h3 class="text-md font-bold text-slate-200 mb-3"><i class="fa-solid fa-clone mr-1"></i> Các Cặp Trí Nhớ (Dành cho Trò chơi 5 - Memory)</h3>
+                        <div id="memory-editor-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Memory inputs loaded dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Save / Reset content actions -->
+                    <div class="flex gap-4 border-t border-slate-700 pt-4 justify-end">
+                        <button onclick="saveAllSettings()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl shadow-lg transition active:scale-95 flex items-center gap-2">
+                            <i class="fa-solid fa-floppy-disk"></i> Lưu và Cập nhật Game
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- GLOBAL DYNAMIC MODALS AND TOASTS (No native alerts!) -->
+    <!-- QUESTION MODAL POPUP -->
+    <div id="global-quiz-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl w-full max-w-2xl shadow-2xl p-6 flex flex-col justify-between overflow-hidden relative">
+            
+            <!-- Confetti visual for correct answer -->
+            <div id="correct-effect-bg" class="absolute inset-0 bg-emerald-950/20 pointer-events-none transition duration-300 opacity-0"></div>
+            <!-- Shake visual for incorrect -->
+            <div id="wrong-effect-bg" class="absolute inset-0 bg-rose-950/20 pointer-events-none transition duration-300 opacity-0"></div>
+
+            <div class="flex justify-between items-center pb-4 border-b border-slate-700">
+                <span id="modal-game-origin" class="text-xs font-semibold uppercase px-2.5 py-1 bg-slate-700 text-slate-300 rounded-lg">CÂU HỎI THỬ THÁCH</span>
+                <button onclick="closeQuizModal()" class="text-slate-400 hover:text-white text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Quiz Content -->
+            <div class="py-6 space-y-4">
+                <div class="text-lg font-bold text-white leading-relaxed text-center" id="modal-question-text">Đang tải câu hỏi...</div>
+                
+                <div id="modal-hint-box" class="p-3 bg-amber-950/30 border border-amber-900/40 rounded-xl text-xs text-amber-300 text-center flex items-center justify-center gap-1.5 hidden">
+                    <i class="fa-solid fa-circle-info"></i> Gợi ý: <span id="modal-hint-text">Gợi ý câu hỏi</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="modal-options-grid">
+                    <!-- Dynamic option buttons go here -->
+                </div>
+            </div>
+
+            <!-- Result Feedback Box -->
+            <div id="modal-feedback-box" class="p-4 bg-slate-900/60 rounded-xl border border-slate-700 text-center hidden">
+                <div id="modal-feedback-title" class="font-bold text-lg">Hủy diệt!</div>
+                <div id="modal-feedback-body" class="text-sm text-slate-300 mt-1">Nội dung giải thưởng hoặc giải thích đáp án.</div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="pt-4 border-t border-slate-700 flex justify-between items-center gap-2">
+                <button onclick="showQuizHint()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-sm font-semibold rounded-lg transition flex items-center gap-1.5">
+                    <i class="fa-regular fa-lightbulb"></i> Gợi ý
+                </button>
+                <button onclick="closeQuizModal()" id="modal-continue-btn" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-bold rounded-lg shadow-md transition hidden">
+                    Tiếp tục <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION POPUP (REPLACES NATIVE ALERT) -->
+    <div id="global-toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 border-l-4 border-indigo-500 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center gap-3">
+        <div id="toast-icon" class="text-indigo-400 text-lg"><i class="fa-solid fa-circle-info"></i></div>
+        <div>
+            <div id="toast-title" class="font-bold text-sm">Thông báo</div>
+            <div id="toast-message" class="text-xs text-slate-300 mt-0.5">Chào mừng thầy cô đến với thế giới trò chơi!</div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // DATA MODEL & INITIAL DATA (Default template: Vũ Trụ)
+        // ==========================================
+        let questions = [];
+        let memoryPairs = [];
+
+        // Predefined templates
+        const templates = {
+            vutru: {
+                topic: "Khám Phá Hệ Mặt Trời & Khoa Học",
+                questions: [
+                    { q: "Hành tinh nào có kích thước gần giống Trái Đất nhất và được mệnh danh là 'Hành tinh sinh đôi'?", a: ["Sao Thủy (Mercury)", "Sao Kim (Venus)", "Sao Hỏa (Mars)", "Sao Mộc (Jupiter)"], correct: 1, hint: "Đây là hành tinh nóng nhất trong Hệ Mặt Trời." },
+                    { q: "Hành tinh nào lớn nhất trong Hệ Mặt Trời của chúng ta?", a: ["Trái Đất", "Sao Thổ (Saturn)", "Sao Mộc (Jupiter)", "Sao Hải Vương (Neptune)"], correct: 2, hint: "Nó có Vết Đỏ Lớn khổng lồ." },
+                    { q: "Vì sao Sao Hỏa có màu đỏ đặc trưng khi quan sát từ Trái Đất?", a: ["Vì có nhiều núi lửa hoạt động", "Vì bề mặt có chứa nhiều Oxit Sắt (rỉ sét)", "Vì bầu khí quyển chứa nhiều khí Neon", "Do sự phản xạ ánh sáng Mặt Trời khác biệt"], correct: 1, hint: "Thành phần hoá học có liên quan tới sắt kim loại bị oxy hoá." },
+                    { q: "Khoảng cách từ Trái Đất đến Mặt Trời được gọi là gì trong thiên văn?", a: ["Năm ánh sáng", "Đơn vị thiên văn (AU)", "Phút ánh sáng", "Parsec"], correct: 1, hint: "Viết tắt là AU." },
+                    { q: "Thiên thể nào không còn được coi là một hành tinh chính thức trong Hệ Mặt Trời kể từ năm 2006?", a: ["Sao Diêm Vương (Pluto)", "Sao Hải Vương", "Sao Thiên Vương", "Mặt Trăng"], correct: 0, hint: "Nó đã bị hạ cấp xuống thành hành tinh lùn." },
+                    { q: "Vành đai các hành tinh lùn và tiểu hành tinh nằm chủ yếu ở giữa quỹ đạo của hai hành tinh nào?", a: ["Sao Thủy và Sao Kim", "Trái Đất và Sao Hỏa", "Sao Hỏa và Sao Mộc", "Sao Mộc và Sao Thổ"], correct: 2, hint: "Ở giữa ranh giới các hành tinh đá ấm và các hành tinh khí khổng lồ lạnh." }
+                ],
+                memory: [
+                    { t1: "Mặt Trời", t2: "Ngôi sao trung tâm, nguồn sáng chính" },
+                    { t1: "Sao Hỏa", t2: "Hành tinh Đỏ nhiều oxit sắt" },
+                    { t1: "Sao Mộc", t2: "Hành tinh khí khổng lồ lớn nhất" },
+                    { t1: "Sao Thủy", t2: "Hành tinh nhỏ nhất và gần Mặt Trời nhất" },
+                    { t1: "Trái Đất", t2: "Hành tinh duy nhất có sự sống phát triển mạnh" },
+                    { t1: "Sao Thổ", t2: "Hành tinh có hệ vành đai tráng lệ nổi bật nhất" }
+                ]
+            },
+            lichsu: {
+                topic: "Lịch Sử Việt Nam Hào Hùng",
+                questions: [
+                    { q: "Người lãnh đạo cuộc khởi nghĩa Hai Bà Trưng vào năm 40 là ai?", a: ["Trưng Trắc và Trưng Nhị", "Triệu Thị Trinh", "Lê Chân", "Bùi Thị Xuân"], correct: 0, hint: "Hai nữ anh hùng hào kiệt đầu tiên chống Bắc thuộc." },
+                    { q: "Chiến thắng Bạch Đằng lịch sử năm 938 gắn liền với vị anh hùng dân tộc nào?", a: ["Đinh Bộ Lĩnh", "Ngô Quyền", "Lê Hoàn", "Trần Hưng Đạo"], correct: 1, hint: "Người sử dụng chiến thuật cắm cọc gỗ nhọn dưới lòng sông Bạch Đằng." },
+                    { q: "Triều đại phong kiến nào ở nước ta tồn tại lâu đời nhất?", a: ["Triều Lý", "Triều Lê", "Triều Trần", "Triều Nguyễn"], correct: 1, hint: "Chia làm hai giai đoạn Hậu Lê và Lê Sơ, tổng cộng hơn 360 năm." },
+                    { q: "Ai là tác giả của bản 'Hịch Tướng Sĩ' lừng danh?", a: ["Trần Quốc Tuấn (Trần Hưng Đạo)", "Lý Thường Kiệt", "Nguyễn Trãi", "Lê Lợi"], correct: 0, hint: "Vị Đại nguyên soái chỉ huy quân đội nhà Trần đại phá quân Nguyên Mông." },
+                    { q: "Kinh đô của triều đại nhà Nguyễn nằm ở tỉnh, thành nào ngày nay?", a: ["Hà Nội", "Huế", "Ninh Bình", "Thanh Hóa"], correct: 1, hint: "Nằm bên bờ Sông Hương thơ mộng miền Trung." },
+                    { q: "Bản Tuyên ngôn Độc lập khai sinh nước Việt Nam Dân chủ Cộng hòa được đọc vào ngày nào?", a: ["19/08/1945", "02/09/1945", "30/04/1975", "07/05/1954"], correct: 1, hint: "Quốc khánh nước Cộng hòa xã hội chủ nghĩa Việt Nam ngày nay." }
+                ],
+                memory: [
+                    { t1: "Ngô Quyền", t2: "Đánh tan quân Nam Hán năm 938 trên sông Bạch Đằng" },
+                    { t1: "Lý Thường Kiệt", t2: "Viết bài thơ Nam Quốc Sơn Hà" },
+                    { t1: "Nguyễn Trãi", t2: "Viết tác phẩm Bình Ngô Đại Cáo" },
+                    { t1: "Đinh Bộ Lĩnh", t2: "Dẹp loạn 12 sứ quân, lập ra nhà Đinh" },
+                    { t1: "Lê Lợi", t2: "Lãnh đạo khởi nghĩa Lam Sơn thắng lợi" },
+                    { t1: "Quang Trung", t2: "Đại phá quân Thanh đầu xuân Kỷ Dậu" }
+                ]
+            },
+            tienganh: {
+                topic: "Tiếng Anh Giao Tiếp & Từ Vựng",
+                questions: [
+                    { q: "Tìm từ trái nghĩa với từ 'generous' (hào phóng, rộng lượng)?", a: ["kind", "mean", "greedy", "selfish"], correct: 1, hint: "Người không thích chia sẻ, hay keo kiệt." },
+                    { q: "Hoàn thành câu sau: 'If it rains tomorrow, we _______ go to the park.'", a: ["won't", "wouldn't", "don't", "haven't"], correct: 0, hint: "Đây là câu điều kiện loại 1." },
+                    { q: "Từ nào mô tả một người vô cùng thông minh, sáng dạ?", a: ["clumsy", "stubborn", "brilliant", "naive"], correct: 2, hint: "Gần nghĩa với từ intelligent hay smart." },
+                    { q: "Động từ 'run' khi ở thì quá khứ đơn (Past Simple) sẽ viết là gì?", a: ["runned", "ran", "running", "rany"], correct: 1, hint: "Đây là một động từ bất quy tắc quen thuộc." },
+                    { q: "Thành ngữ 'A piece of cake' có nghĩa là gì trong tiếng Anh?", a: ["Một lát bánh ngọt thơm ngon", "Một việc gì đó rất dễ dàng", "Mọi việc đều khó khăn ban đầu", "Yêu cầu chia sẻ thức ăn"], correct: 1, hint: "Ví dụ: Trò chơi này thật là 'a piece of cake'." },
+                    { q: "Từ viết tắt 'FAQ' trên các trang mạng dịch vụ có ý nghĩa là gì?", a: ["Fast And Quality", "Frequently Asked Questions", "Family And Quizzes", "For All Questions"], correct: 1, hint: "Những câu hỏi phổ biến thường gặp của người dùng." }
+                ],
+                memory: [
+                    { t1: "Gorgeous", t2: "Vô cùng lộng lẫy và xinh đẹp" },
+                    { t1: "Benevolent", t2: "Nhân từ, tốt bụng và rộng lượng" },
+                    { t1: "Clumsy", t2: "Vụng về, dễ làm đổ vỡ đồ đạc" },
+                    { t1: "Diligent", t2: "Chăm chỉ, siêng năng cần mẫn" },
+                    { t1: "Skeptic", t2: "Người luôn hoài nghi, đa nghi" },
+                    { t1: "Optimistic", t2: "Luôn lạc quan, nhìn vào mặt tích cực" }
+                ]
+            }
+        };
+
+        // Scores state
+        let scores = { red: 0, blue: 0 };
+
+        // Game states
+        let selectedGame = 'game1';
+        let wheelAngle = 0;
+        let isSpinning = false;
+        let wheelSelectedQuestionIdx = -1;
+        let spaceRacePositions = { red: 0, blue: 0 };
+        let spaceRaceCurrentTeam = null;
+
+        // Puzzle state
+        let puzzleCellsRevealed = Array(9).fill(false);
+        const puzzleRewards = ["+20 điểm", "Lật 1 ô", "Nhân đôi điểm", "+50 điểm", "-10 điểm", "+30 điểm", "Thêm lượt", "+10 điểm", "+40 điểm"];
+
+        // Gift state
+        let openedChests = Array(6).fill(false);
+        const chestRewards = [
+            { txt: "Bạn được +50 điểm!", type: "point", val: 50 },
+            { txt: "Tuyệt vời! +100 điểm!", type: "point", val: 100 },
+            { txt: "Không may rồi, bị trừ 20 điểm!", type: "point", val: -20 },
+            { txt: "Quá đỉnh! +80 điểm!", type: "point", val: 80 },
+            { txt: "Chà! Nhân đôi điểm hiện tại của đội!", type: "multiply", val: 2 },
+            { txt: "Một ly nước giải khát miễn phí từ thầy/cô! (+10 điểm)", type: "point", val: 10 }
+        ];
+
+        // Memory game state
+        let memoryCards = [];
+        let memoryFlippedCards = [];
+        let memoryPairsFoundCount = 0;
+        let memoryTimerVal = 0;
+        let memoryTimerInterval = null;
+
+        // Active Quiz modal callback variables
+        let activeQuizCallback = null;
+        let currentModalQuestion = null;
+
+        // Initialize App
+        window.onload = function() {
+            loadTemplate('vutru'); // load default template
+            initWheel();
+            initPuzzle();
+            initMemoryGame();
+            showToast("Hệ thống game học tập", "Ứng dụng đã sẵn sàng! Thầy cô có thể chọn game bên trái.");
+        };
+
+        // ==========================================
+        // MAIN ROUTING & PANEL CONTROL
+        // ==========================================
+        function switchTab(tabId) {
+            // Hide all screens
+            document.querySelectorAll('.screen').forEach(scr => scr.classList.add('hidden'));
+            // Un-active all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-slate-700', 'border-indigo-500', 'text-white');
+                btn.classList.add('text-slate-300', 'border-transparent');
+            });
+
+            // Show active screen
+            const activeScr = document.getElementById('screen-' + tabId);
+            if (activeScr) activeScr.classList.remove('hidden');
+
+            // Active button style
+            const activeBtn = document.getElementById('btn-' + tabId);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-slate-700', 'border-indigo-500', 'text-white');
+            }
+
+            selectedGame = tabId;
+
+            // Specific screen initializations
+            if (tabId === 'game1') {
+                drawWheel();
+            } else if (tabId === 'game5') {
+                if (memoryCards.length === 0) initMemoryGame();
+            } else if (tabId === 'editor') {
+                renderEditor();
+            }
+        }
+
+        // ==========================================
+        // TEMPLATE LOADER
+        // ==========================================
+        function loadTemplate(templateKey) {
+            const temp = templates[templateKey];
+            if (!temp) return;
+
+            questions = JSON.parse(JSON.stringify(temp.questions));
+            memoryPairs = JSON.parse(JSON.stringify(temp.memory));
+            
+            document.getElementById('current-topic-label').innerText = "Chủ đề hiện tại: " + temp.topic;
+            
+            // Re-render UI
+            initWheel();
+            resetSpaceRace();
+            initPuzzle();
+            resetGiftBoxes();
+            initMemoryGame();
+
+            showToast("Đã tải bài học mới", `Bộ câu hỏi về "${temp.topic}" đã sẵn sàng!`);
+        }
+
+        // ==========================================
+        // SCOREBOARD FUNCTIONS
+        // ==========================================
+        function changeScore(team, val) {
+            scores[team] += val;
+            if (scores[team] < 0) scores[team] = 0;
+            document.getElementById('score-' + team).innerText = scores[team];
+            showToast(`Cập nhật điểm đội ${team === 'red' ? 'Đỏ' : 'Xanh'}`, `${val > 0 ? '+' : ''}${val} điểm!`);
+        }
+
+        function resetScores() {
+            scores = { red: 0, blue: 0 };
+            document.getElementById('score-red').innerText = "0";
+            document.getElementById('score-blue').innerText = "0";
+            showToast("Đặt lại điểm số", "Bảng điểm đã được đưa về 0.");
+        }
+
+        // ==========================================
+        // REUSABLE QUIZ MODAL CONTROLLER
+        // ==========================================
+        function openQuiz(questionObj, sourceTitle, onResultCallback) {
+            currentModalQuestion = questionObj;
+            activeQuizCallback = onResultCallback;
+
+            // Reset modal styles & animations
+            document.getElementById('correct-effect-bg').style.opacity = '0';
+            document.getElementById('wrong-effect-bg').style.opacity = '0';
+            document.getElementById('modal-feedback-box').classList.add('hidden');
+            document.getElementById('modal-continue-btn').classList.add('hidden');
+            document.getElementById('modal-hint-box').classList.add('hidden');
+
+            document.getElementById('modal-game-origin').innerText = sourceTitle;
+            document.getElementById('modal-question-text').innerText = questionObj.q;
+
+            // Pop options
+            const grid = document.getElementById('modal-options-grid');
+            grid.innerHTML = '';
+            questionObj.a.forEach((optText, index) => {
+                const btn = document.createElement('button');
+                btn.className = "option-btn p-4 bg-slate-700/80 hover:bg-slate-700 text-left rounded-xl font-medium border border-slate-600 hover:border-slate-400 transition text-sm flex gap-3 items-center";
+                btn.innerHTML = `<span class="flex items-center justify-center w-6 h-6 rounded-lg bg-slate-800 text-[10px] font-bold text-slate-300 uppercase">${String.fromCharCode(65 + index)}</span> <span>${optText}</span>`;
+                btn.onclick = () => submitAnswer(index, btn);
+                grid.appendChild(btn);
+            });
+
+            // Show modal
+            document.getElementById('global-quiz-modal').classList.remove('hidden');
+        }
+
+        function showQuizHint() {
+            if (!currentModalQuestion || !currentModalQuestion.hint) return;
+            document.getElementById('modal-hint-text').innerText = currentModalQuestion.hint;
+            document.getElementById('modal-hint-box').classList.remove('hidden');
+        }
+
+        function submitAnswer(chosenIdx, clickedBtn) {
+            // Disable all other buttons so they can't multi-click
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+
+            const isCorrect = (chosenIdx === currentModalQuestion.correct);
+            const feedbackBox = document.getElementById('modal-feedback-box');
+            const feedbackTitle = document.getElementById('modal-feedback-title');
+            const feedbackBody = document.getElementById('modal-feedback-body');
+            const continueBtn = document.getElementById('modal-continue-btn');
+
+            if (isCorrect) {
+                clickedBtn.classList.remove('bg-slate-700/80', 'border-slate-600');
+                clickedBtn.classList.add('bg-emerald-600/90', 'border-emerald-400', 'text-white');
+                document.getElementById('correct-effect-bg').style.opacity = '1';
+                feedbackBox.classList.remove('hidden', 'bg-rose-950/40', 'border-rose-800/40');
+                feedbackBox.classList.add('bg-emerald-950/40', 'border-emerald-800/40');
+                feedbackTitle.className = "font-bold text-lg text-emerald-400";
+                feedbackTitle.innerHTML = `<i class="fa-solid fa-square-check mr-2"></i> CHÍNH XÁC!`;
+                feedbackBody.innerText = "Tuyệt vời, bạn đã trả lời đúng thử thách học tập!";
+            } else {
+                clickedBtn.classList.remove('bg-slate-700/80', 'border-slate-600');
+                clickedBtn.classList.add('bg-rose-600/90', 'border-rose-400', 'text-white');
+                const optionBtns = document.querySelectorAll('.option-btn');
+                if (optionBtns[currentModalQuestion.correct]) {
+                    optionBtns[currentModalQuestion.correct].classList.remove('bg-slate-700/80', 'border-slate-600');
+                    optionBtns[currentModalQuestion.correct].classList.add('bg-emerald-600/60', 'border-emerald-500');
+                }
+                document.getElementById('wrong-effect-bg').style.opacity = '1';
+                feedbackBox.classList.remove('hidden', 'bg-emerald-950/40', 'border-emerald-800/40');
+                feedbackBox.classList.add('bg-rose-950/40', 'border-rose-800/40');
+                feedbackTitle.className = "font-bold text-lg text-rose-400";
+                feedbackTitle.innerHTML = `<i class="fa-solid fa-triangle-exclamation mr-2"></i> SAI RỒI!`;
+                feedbackBody.innerText = `Đáp án đúng là: ${String.fromCharCode(65 + currentModalQuestion.correct)}. ${currentModalQuestion.a[currentModalQuestion.correct]}`;
+            }
+
+            continueBtn.classList.remove('hidden');
+            if (activeQuizCallback) {
+                activeQuizCallback(isCorrect);
+            }
+        }
+
+        function closeQuizModal() {
+            document.getElementById('global-quiz-modal').classList.add('hidden');
+            currentModalQuestion = null;
+            activeQuizCallback = null;
+        }
+
+        // ==========================================
+        // GAME 1: WHEEL OF KNOWLEDGE (VÒNG QUAY)
+        // ==========================================
+        function initWheel() {
+            drawWheel();
+            document.getElementById('wheel-status').innerText = "Vòng quay đã được đồng bộ với bài học!";
+            document.getElementById('wheel-view-btn').classList.add('hidden');
+            wheelSelectedQuestionIdx = -1;
+        }
+
+        function drawWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const numSegments = questions.length || 1;
+            const segmentAngle = (2 * Math.PI) / numSegments;
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#ef4444', '#14b8a6', '#6366f1'];
+            ctx.clearRect(0, 0, 400, 400);
+            for (let i = 0; i < numSegments; i++) {
+                ctx.beginPath();
+                ctx.moveTo(200, 200);
+                ctx.arc(200, 200, 190, i * segmentAngle + wheelAngle, (i + 1) * segmentAngle + wheelAngle);
+                ctx.closePath();
+                ctx.fillStyle = colors[i % colors.length];
+                ctx.fill();
+                ctx.lineWidth = 2;
+                ctx.strokeStyle = '#1e293b';
+                ctx.stroke();
+                ctx.save();
+                ctx.translate(200, 200);
+                ctx.rotate(i * segmentAngle + segmentAngle / 2 + wheelAngle);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#ffffff";
+                ctx.font = "bold 16px Quicksand";
+                ctx.fillText(`CÂU ${i + 1}`, 150, 6);
+                ctx.restore();
+            }
+            ctx.beginPath();
+            ctx.arc(200, 200, 30, 0, 2 * Math.PI);
+            ctx.fillStyle = '#1e293b';
+            ctx.fill();
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+        }
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('spin-btn').disabled = true;
+            document.getElementById('wheel-view-btn').classList.add('hidden');
+            document.getElementById('wheel-status').innerText = "Đang quay mãnh liệt...";
+            let startSpinTime = null;
+            const spinDuration = 3500;
+            const baseRotations = 5 + Math.random() * 5;
+            const targetAdditionalAngle = baseRotations * 2 * Math.PI;
+            const initialAngle = wheelAngle;
+            function animateSpin(timestamp) {
+                if (!startSpinTime) startSpinTime = timestamp;
+                const elapsed = timestamp - startSpinTime;
+                const progress = Math.min(elapsed / spinDuration, 1);
+                const ease = 1 - Math.pow(1 - progress, 3);
+                wheelAngle = initialAngle + ease * targetAdditionalAngle;
+                drawWheel();
+                if (progress < 1) {
+                    requestAnimationFrame(animateSpin);
+                } else {
+                    isSpinning = false;
+                    document.getElementById('spin-btn').disabled = false;
+                    calculateWheelResult();
+                }
+            }
+            requestAnimationFrame(animateSpin);
+        }
+
+        function calculateWheelResult() {
+            const numSegments = questions.length || 1;
+            const segmentAngle = (2 * Math.PI) / numSegments;
+            let normalizedAngle = (wheelAngle % (2 * Math.PI));
+            if (normalizedAngle < 0) normalizedAngle += (2 * Math.PI);
+            let rawIdx = Math.floor((1.5 * Math.PI - normalizedAngle) / segmentAngle);
+            while (rawIdx < 0) rawIdx += numSegments;
+            const finalIdx = rawIdx % numSegments;
+            wheelSelectedQuestionIdx = finalIdx;
+            document.getElementById('wheel-status').innerHTML = `Vòng quay dừng lại ở <span class="text-amber-400 font-bold">CÂU HỎI SỐ ${finalIdx + 1}</span>!`;
+            document.getElementById('wheel-view-btn').classList.remove('hidden');
+        }
+
+        function openQuestionByWheel() {
+            if (wheelSelectedQuestionIdx < 0 || wheelSelectedQuestionIdx >= questions.length) return;
+            const question = questions[wheelSelectedQuestionIdx];
+            openQuiz(question, `VÒNG QUAY: CÂU HỎI SỐ ${wheelSelectedQuestionIdx + 1}`, (isCorrect) => {
+                if (isCorrect) {
+                    showToast("Điểm số!", "Giáo viên có thể cộng điểm cho học sinh trên bảng điểm phía trên!");
+                }
+            });
+        }
+
+        // ==========================================
+        // GAME 2: SPACE RACE (ĐUA XE KHÔNG GIAN)
+        // ==========================================
+        function resetSpaceRace() {
+            spaceRacePositions = { red: 0, blue: 0 };
+            document.getElementById('rocket-red').style.left = "0%";
+            document.getElementById('rocket-blue').style.left = "0%";
+            spaceRaceCurrentTeam = null;
+        }
+
+        function launchRaceQuestion(team) {
+            spaceRaceCurrentTeam = team;
+            if (questions.length === 0) {
+                showToast("Cảnh báo", "Vui lòng thêm câu hỏi ở trang Biên Soạn!");
+                return;
+            }
+            const randQ = questions[Math.floor(Math.random() * questions.length)];
+            const teamName = team === 'red' ? 'ĐỘI ĐỎ' : 'ĐỘI XANH';
+            openQuiz(randQ, `ĐƯỜNG ĐUA: LƯỢT CỦA ${teamName}`, (isCorrect) => {
+                if (isCorrect) {
+                    spaceRacePositions[spaceRaceCurrentTeam] += 20;
+                    if (spaceRacePositions[spaceRaceCurrentTeam] >= 100) {
+                        spaceRacePositions[spaceRaceCurrentTeam] = 100;
+                        document.getElementById(`rocket-${spaceRaceCurrentTeam}`).style.left = spaceRacePositions[spaceRaceCurrentTeam] + "%";
+                        setTimeout(() => {
+                            showToast(`ĐỘI ${spaceRaceCurrentTeam === 'red' ? 'ĐỎ' : 'XANH'} THẮNG CUỘC!`, "Chúc mừng chiếc phi thuyền đã cập bến vũ trụ đầu tiên!");
+                            changeScore(spaceRaceCurrentTeam, 100);
+                        }, 600);
+                    } else {
+                        document.getElementById(`rocket-${spaceRaceCurrentTeam}`).style.left = spaceRacePositions[spaceRaceCurrentTeam] + "%";
+                        showToast(`Phi thuyền ${spaceRaceCurrentTeam === 'red' ? 'Đỏ' : 'Xanh'} tiến bước!`, "Đã tiến thêm một chặng quỹ đạo!");
+                    }
+                } else {
+                    showToast("Sai lầm đáng tiếc", "Tàu vũ trụ phải dừng lại để bảo dưỡng vì trả lời chưa đúng!");
+                }
+            });
+        }
+
+        // ==========================================
+        // GAME 3: MYSTERY PUZZLE (MẢNH GHÉP BÍ ẨN)
+        // ==========================================
+        function initPuzzle() {
+            puzzleCellsRevealed = Array(9).fill(false);
+            const grid = document.getElementById('puzzle-grid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 9; i++) {
+                const cell = document.createElement('div');
+                cell.id = `puzzle-cell-${i}`;
+                cell.className = "bg-indigo-900 border border-indigo-700 hover:bg-indigo-800 text-white font-bold text-xl flex items-center justify-center cursor-pointer transition active:scale-95 select-none";
+                cell.innerText = i + 1;
+                cell.onclick = () => revealPuzzleCell(i);
+                grid.appendChild(cell);
+            }
+            document.getElementById('puzzle-hint-text').innerText = "Gợi ý bí mật: Hãy xem kĩ các câu hỏi!";
+        }
+
+        function revealPuzzleCell(index) {
+            if (puzzleCellsRevealed[index]) return;
+            if (questions.length === 0) {
+                showToast("Cảnh báo", "Vui lòng thêm câu hỏi!");
+                return;
+            }
+            const q = questions[index % questions.length];
+            openQuiz(q, `MẢNH GHÉP SỐ ${index + 1}`, (isCorrect) => {
+                if (isCorrect) {
+                    const cell = document.getElementById(`puzzle-cell-${index}`);
+                    cell.style.opacity = '0';
+                    cell.style.pointerEvents = 'none';
+                    puzzleCellsRevealed[index] = true;
+                    showToast("Khám phá!", `Lộ diện một mảnh ghép của bức tranh dưới ô số ${index + 1}!`);
+                } else {
+                    showToast("Lật ô thất bại", "Cần trả lời chính xác mới được hé mở mảnh ghép!");
+                }
+            });
+        }
+
+        function revealAllPuzzle() {
+            for (let i = 0; i < 9; i++) {
+                const cell = document.getElementById(`puzzle-cell-${i}`);
+                if (cell) {
+                    cell.style.opacity = '0';
+                    cell.style.pointerEvents = 'none';
+                }
+                puzzleCellsRevealed[i] = true;
+            }
+            showToast("Hé mở toàn bộ", "Toàn bộ bức tranh bí mật đã lộ diện!");
+        }
+
+        function resetPuzzle() {
+            initPuzzle();
+            showToast("Khởi tạo lại mảnh ghép", "Tất cả các ô số đã được che lại như ban đầu.");
+        }
+
+        // ==========================================
+        // GAME 4: MYSTERY GIFT BOX (HỘP QUÀ BÍ MẬT)
+        // ==========================================
+        function resetGiftBoxes() {
+            openedChests = Array(6).fill(false);
+            const boxes = document.querySelectorAll('.gift-box');
+            boxes.forEach((box, index) => {
+                box.classList.remove('opacity-50', 'bg-slate-950/40', 'border-solid');
+                box.classList.add('bg-slate-900/80', 'border-dashed');
+                const innerText = box.querySelector('.font-bold');
+                innerText.innerText = `Hộp Số ${index + 1}`;
+                const innerIcon = box.querySelector('.text-5xl');
+                innerIcon.className = "text-5xl group-hover:animate-bounce mb-3";
+                const colors = ["text-cyan-500", "text-violet-500", "text-rose-500", "text-emerald-500", "text-amber-500", "text-indigo-500"];
+                innerIcon.innerHTML = `<i class="fa-solid fa-gift ${colors[index]}"></i>`;
+            });
+        }
+
+        function openGiftBox(boxNumber, element) {
+            const index = boxNumber - 1;
+            if (openedChests[index]) {
+                showToast("Hộp quà đã mở", "Hộp quà này đã được nhận phần thưởng rồi!");
+                return;
+            }
+            if (questions.length === 0) {
+                showToast("Lỗi", "Vui lòng nhập câu hỏi trong Biên soạn!");
+                return;
+            }
+            const randQ = questions[index % questions.length];
+            openQuiz(randQ, `HỘP QUÀ SỐ ${boxNumber}`, (isCorrect) => {
+                if (isCorrect) {
+                    openedChests[index] = true;
+                    element.classList.add('opacity-50', 'bg-slate-950/40', 'border-solid');
+                    element.classList.remove('bg-slate-900/80', 'border-dashed');
+                    const reward = chestRewards[index % chestRewards.length];
+                    element.querySelector('.font-bold').innerText = reward.txt;
+                    element.querySelector('.text-5xl').innerHTML = `<i class="fa-solid fa-box-open text-amber-400"></i>`;
+                    setTimeout(() => {
+                        showToast(`PHẦN THƯỞNG HỘP SỐ ${boxNumber}`, reward.txt);
+                    }, 500);
+                } else {
+                    showToast("Đáng tiếc quá!", "Không giải được thử thách, hộp quà bí mật tự động biến mất!");
+                }
+            });
+        }
+
+        // ==========================================
+        // GAME 5: MEMORY CARD GAME (TRẬN CHIẾN TRÍ NHỚ)
+        // ==========================================
+        function initMemoryGame() {
+            clearInterval(memoryTimerInterval);
+            memoryTimerVal = 0;
+            document.getElementById('memory-timer').innerHTML = `<i class="fa-regular fa-clock mr-1 text-violet-400"></i>00:00`;
+            memoryFlippedCards = [];
+            memoryPairsFoundCount = 0;
+            document.getElementById('memory-pairs-found').innerText = "0";
+            const sliceNum = Math.min(6, memoryPairs.length);
+            const activePairs = memoryPairs.slice(0, sliceNum);
+            let tempCards = [];
+            activePairs.forEach((pair, idx) => {
+                tempCards.push({ id: idx * 2, text: pair.t1, matchId: idx, type: 'term' });
+                tempCards.push({ id: idx * 2 + 1, text: pair.t2, matchId: idx, type: 'def' });
+            });
+            memoryCards = tempCards.sort(() => Math.random() - 0.5);
+            const grid = document.getElementById('memory-cards-grid');
+            grid.innerHTML = '';
+            memoryCards.forEach((card, idx) => {
+                const cardEl = document.createElement('div');
+                cardEl.className = "flip-card h-28 cursor-pointer select-none";
+                cardEl.id = `mem-card-${idx}`;
+                cardEl.onclick = () => flipMemoryCard(idx);
+                cardEl.innerHTML = `
+                    <div class="flip-card-inner relative w-full h-full text-center transition-transform duration-500 rounded-xl shadow border border-slate-700">
+                        <!-- Front (Hidden Face) -->
+                        <div class="flip-card-front absolute inset-0 bg-slate-800 text-slate-400 flex flex-col items-center justify-center rounded-xl p-2">
+                            <i class="fa-solid fa-brain text-2xl text-violet-500/40 mb-1"></i>
+                            <span class="text-xs font-semibold tracking-wide uppercase text-slate-500">Mã: ${idx+1}</span>
+                        </div>
+                        <!-- Back (Revealed text) -->
+                        <div class="flip-card-back absolute inset-0 bg-violet-950/80 text-violet-100 flex items-center justify-center rounded-xl p-3 border-2 border-violet-500">
+                            <p class="text-xs font-bold leading-tight line-clamp-3">${card.text}</p>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(cardEl);
+            });
+            memoryTimerInterval = setInterval(() => {
+                memoryTimerVal++;
+                const min = String(Math.floor(memoryTimerVal / 60)).padStart(2, '0');
+                const sec = String(memoryTimerVal % 60).padStart(2, '0');
+                document.getElementById('memory-timer').innerHTML = `<i class="fa-regular fa-clock mr-1 text-violet-400"></i>${min}:${sec}`;
+            }, 1000);
+            showToast("Bắt đầu Trận Chiến Trí Nhớ", "Hãy tìm và lật đúng cặp thuật ngữ tương ứng với nhau!");
+        }
+
+        function flipMemoryCard(idx) {
+            const cardEl = document.getElementById(`mem-card-${idx}`);
+            if (memoryFlippedCards.length >= 2) return;
+            if (cardEl.classList.contains('flipped')) return;
+            if (cardEl.classList.contains('matched')) return;
+            cardEl.classList.add('flipped');
+            memoryFlippedCards.push(idx);
+            if (memoryFlippedCards.length === 2) {
+                const firstIdx = memoryFlippedCards[0];
+                const secondIdx = memoryFlippedCards[1];
+                const card1 = memoryCards[firstIdx];
+                const card2 = memoryCards[secondIdx];
+                if (card1.matchId === card2.matchId && card1.type !== card2.type) {
+                    setTimeout(() => {
+                        document.getElementById(`mem-card-${firstIdx}`).classList.add('matched');
+                        document.getElementById(`mem-card-${secondIdx}`).classList.add('matched');
+                        document.querySelector(`#mem-card-${firstIdx} .flip-card-back`).classList.add('border-emerald-500', 'bg-emerald-950/80');
+                        document.querySelector(`#mem-card-${secondIdx} .flip-card-back`).classList.add('border-emerald-500', 'bg-emerald-950/80');
+                        memoryFlippedCards = [];
+                        memoryPairsFoundCount++;
+                        document.getElementById('memory-pairs-found').innerText = memoryPairsFoundCount;
+                        if (memoryPairsFoundCount === memoryCards.length / 2) {
+                            clearInterval(memoryTimerInterval);
+                            showToast("Chiến thắng vang dội!", `Chúc mừng lớp học đã chinh phục được bảng Trí Nhớ trong ${memoryTimerVal} giây!`);
+                        } else {
+                            showToast("Ghép cặp đúng!", "Nhớ rất tốt! Cộng điểm cho đội vừa chọn đúng nào!");
+                        }
+                    }, 600);
+                } else {
+                    setTimeout(() => {
+                        document.getElementById(`mem-card-${firstIdx}`).classList.remove('flipped');
+                        document.getElementById(`mem-card-${secondIdx}`).classList.remove('flipped');
+                        memoryFlippedCards = [];
+                    }, 1200);
+                }
+            }
+        }
+
+        // ==========================================
+        // CONTENT EDITOR CONTROL (SOẠN BÀI HỌC)
+        // ==========================================
+        function renderEditor() {
+            const qContainer = document.getElementById('question-editor-container');
+            qContainer.innerHTML = '';
+            questions.forEach((q, qIdx) => {
+                const div = document.createElement('div');
+                div.className = "bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3 relative";
+                div.innerHTML = `
+                    <button onclick="removeQuestion(${qIdx})" class="absolute top-4 right-4 text-rose-500 hover:text-rose-400 text-sm">
+                        <i class="fa-solid fa-trash"></i> Xóa
+                    </button>
+                    <div>
+                        <label class="block text-xs text-slate-400 font-semibold mb-1">Câu hỏi số ${qIdx + 1}:</label>
+                        <input type="text" id="edit-q-text-${qIdx}" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1.5 px-3 text-sm focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none" value="${q.q}">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[10px] text-slate-400">Đáp án A:</label>
+                            <input type="text" id="edit-q-opt-${qIdx}-0" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-xs" value="${q.a[0]}">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400">Đáp án B:</label>
+                            <input type="text" id="edit-q-opt-${qIdx}-1" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-xs" value="${q.a[1]}">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400">Đáp án C:</label>
+                            <input type="text" id="edit-q-opt-${qIdx}-2" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-xs" value="${q.a[2]}">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400">Đáp án D:</label>
+                            <input type="text" id="edit-q-opt-${qIdx}-3" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-xs" value="${q.a[3]}">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 font-semibold mb-1">Đáp án đúng:</label>
+                            <select id="edit-q-correct-${qIdx}" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-xs">
+                                <option value="0" ${q.correct === 0 ? 'selected':''}>Đáp án A</option>
+                                <option value="1" ${q.correct === 1 ? 'selected':''}>Đáp án B</option>
+                                <option value="2" ${q.correct === 2 ? 'selected':''}>Đáp án C</option>
+                                <option value="3" ${q.correct === 3 ? 'selected':''}>Đáp án D</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs text-slate-400 font-semibold mb-1">Gợi ý gợi mở:</label>
+                            <input type="text" id="edit-q-hint-${qIdx}" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2 text-xs" value="${q.hint || ''}">
+                        </div>
+                    </div>
+                `;
+                qContainer.appendChild(div);
+            });
+            const mContainer = document.getElementById('memory-editor-container');
+            mContainer.innerHTML = '';
+            for (let i = 0; i < 6; i++) {
+                const pair = memoryPairs[i] || { t1: "", t2: "" };
+                const div = document.createElement('div');
+                div.className = "bg-slate-900 border border-slate-700 rounded-xl p-3 space-y-2";
+                div.innerHTML = `
+                    <div class="text-xs font-semibold text-violet-400">Cặp ghép trí nhớ #${i+1}</div>
+                    <div>
+                        <input type="text" id="edit-mem-t1-${i}" placeholder="Từ/Thuật ngữ (Ví dụ: Trái Đất)" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2.5 text-xs text-white" value="${pair.t1}">
+                    </div>
+                    <div>
+                        <input type="text" id="edit-mem-t2-${i}" placeholder="Định nghĩa tương ứng (Ví dụ: Hành tinh xanh)" class="w-full bg-slate-800 border border-slate-700 rounded-lg py-1 px-2.5 text-xs text-slate-300" value="${pair.t2}">
+                    </div>
+                `;
+                mContainer.appendChild(div);
+            }
+        }
+
+        function addQuestion() {
+            questions.push({
+                q: "Nội dung câu hỏi mới của bạn là gì?",
+                a: ["Lựa chọn A", "Lựa chọn B", "Lựa chọn C", "Lựa chọn D"],
+                correct: 0,
+                hint: "Gợi ý câu hỏi"
+            });
+            renderEditor();
+            showToast("Đã thêm câu hỏi trống", "Kéo xuống dưới cùng bảng câu hỏi để soạn thảo nội dung mới.");
+        }
+
+        function removeQuestion(index) {
+            if (questions.length <= 1) {
+                showToast("Không thể xóa", "Nên duy trì ít nhất 1 câu hỏi để các trò chơi không bị lỗi!");
+                return;
+            }
+            questions.splice(index, 1);
+            renderEditor();
+            showToast("Đã xóa câu hỏi", "Hệ thống đã loại bỏ câu hỏi này.");
+        }
+
+        function saveAllSettings() {
+            const updatedQuestions = [];
+            questions.forEach((q, idx) => {
+                const text = document.getElementById(`edit-q-text-${idx}`).value.trim();
+                const optA = document.getElementById(`edit-q-opt-${idx}-0`).value.trim();
+                const optB = document.getElementById(`edit-q-opt-${idx}-1`).value.trim();
+                const optC = document.getElementById(`edit-q-opt-${idx}-2`).value.trim();
+                const optD = document.getElementById(`edit-q-opt-${idx}-3`).value.trim();
+                const correct = parseInt(document.getElementById(`edit-q-correct-${idx}`).value);
+                const hint = document.getElementById(`edit-q-hint-${idx}`).value.trim();
+                if (text) {
+                    updatedQuestions.push({
+                        q: text,
+                        a: [optA || "A", optB || "B", optC || "C", optD || "D"],
+                        correct: correct,
+                        hint: hint
+                    });
+                }
+            });
+            questions = updatedQuestions;
+            const updatedMemory = [];
+            for (let i = 0; i < 6; i++) {
+                const t1Val = document.getElementById(`edit-mem-t1-${i}`).value.trim();
+                const t2Val = document.getElementById(`edit-mem-t2-${i}`).value.trim();
+                if (t1Val && t2Val) {
+                    updatedMemory.push({ t1: t1Val, t2: t2Val });
+                }
+            }
+            if (updatedMemory.length > 0) {
+                memoryPairs = updatedMemory;
+            }
+            document.getElementById('current-topic-label').innerText = "Chủ đề hiện tại: Bộ câu hỏi Tự soạn của giáo viên";
+            initWheel();
+            resetSpaceRace();
+            initPuzzle();
+            resetGiftBoxes();
+            initMemoryGame();
+            showToast("Lưu thành công!", "Dữ liệu trò chơi mới đã được đồng bộ hoàn tất!");
+            switchTab('game1');
+        }
+
+        // ==========================================
+        // TOAST NOTIFICATIONS (No native alert)
+        // ==========================================
+        function showToast(title, message) {
+            const toast = document.getElementById('global-toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-message').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 4000);
+        }
+    </script>
+</body>
 </html>
 
